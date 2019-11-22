@@ -5,10 +5,7 @@ from __future__ import print_function
 import time
 
 import numpy as np
-import vrep
 
-
-from naorobot import clientID
 from naorobot import start_session, end_session, associate_handlers
 from naorobot import read_joint_angles, write_joint_angles
 
@@ -19,17 +16,11 @@ def change_posture(posture_joint_angles, fraction=50, fraction_speed=0.015):
     robot_joint_angles = read_joint_angles()
     fraction_joint_angles = np.divide(np.subtract(
         posture_joint_angles, robot_joint_angles), fraction)
-
     for i in xrange(int(fraction)):
         # compute new joint angles
         robot_joint_angles = np.add(robot_joint_angles, fraction_joint_angles)
         # apply new joint angles to the robot
-        vrep.simxPauseCommunication(clientID, True)
-        write_joint_angles(
-            robot_joint_angles,
-            simx_opmode=vrep.simx_opmode_oneshot)
-        vrep.simxPauseCommunication(clientID, False)
-        vrep.simxSynchronousTrigger(clientID)
+        write_joint_angles(robot_joint_angles)
         # wait for physics stable
         time.sleep(fraction_speed)
 

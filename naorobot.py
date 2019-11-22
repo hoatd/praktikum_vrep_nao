@@ -168,9 +168,6 @@ def associate_handlers():
             returnCode, position = vrep.simxGetJointPosition(
                 clientID, _JointHandles[index],
                 vrep.simx_opmode_streaming)
-            returnCode = vrep.simxSetJointTargetPosition(
-                clientID, _JointHandles[index], 0.0,
-                vrep.simx_opmode_streaming)
     for index, name in enumerate(LHandJointNames):
         returnCode, _LHandJointHandles[index] = vrep.simxGetObjectHandle(
             clientID, name + '#', vrep.simx_opmode_blocking)
@@ -181,9 +178,6 @@ def associate_handlers():
             returnCode, position = vrep.simxGetJointPosition(
                 clientID, _LHandJointHandles[index],
                 vrep.simx_opmode_streaming)
-            returnCode = vrep.simxSetJointTargetPosition(
-                clientID, _LHandJointHandles[index], 0.0,
-                vrep.simx_opmode_streaming)
     for index, name in enumerate(RHandJointNames):
         returnCode, _RHandJointHandles[index] = vrep.simxGetObjectHandle(
             clientID, name + '#', vrep.simx_opmode_blocking)
@@ -193,9 +187,6 @@ def associate_handlers():
         else:  # make sure right hand finger handlers work properly
             returnCode, position = vrep.simxGetJointPosition(
                 clientID, _RHandJointHandles[index],
-                vrep.simx_opmode_streaming)
-            returnCode = vrep.simxSetJointTargetPosition(
-                clientID, _RHandJointHandles[index], 0.0,
                 vrep.simx_opmode_streaming)
     for index, name in enumerate(LFsrNames):
         returnCode, _LFsrHandles[index] = vrep.simxGetObjectHandle(
@@ -253,7 +244,11 @@ def read_joint_angles(simx_opmode=vrep.simx_opmode_buffer):
         if _JointHandles[index]:
             returnCode, position = vrep.simxGetJointPosition(
                 clientID, _JointHandles[index], simx_opmode)
-            if returnCode:
+            if returnCode == vrep.simx_return_novalue_flag:
+                # Ignore report of the 1st call of simxSetJointTargetPosition
+                # that returns no previous buffer in streaming mode
+                angles[index] = position
+            elif returnCode:
                 print("Failed reading position of joint %s (error: %d)" % (
                     name, returnCode))
             else:
@@ -268,7 +263,11 @@ def write_joint_angles(angles, simx_opmode=vrep.simx_opmode_streaming):
         if _JointHandles[index] and angles[index] is not None:
             returnCode = vrep.simxSetJointTargetPosition(
                 clientID, _JointHandles[index], angles[index], simx_opmode)
-            if returnCode:
+            if returnCode == vrep.simx_return_novalue_flag:
+                # Ignore report of the 1st call of simxSetJointTargetPosition
+                # that returns no previous buffer in streaming mode
+                pass
+            elif returnCode:
                 print("Failed writing position of joint %s (error: %d)" % (
                     name, returnCode))
 
@@ -347,22 +346,26 @@ def _set_hand_fingers(finger_names, finger_handles, value, simx_opmode):
         if finger_handles[index]:
             returnCode = vrep.simxSetJointTargetPosition(
                 clientID, finger_handles[index], value, simx_opmode)
-            if returnCode:
+            if returnCode == vrep.simx_return_novalue_flag:
+                # Ignore report of the 1st call of simxSetJointTargetPosition
+                # that returns no previous buffer in streaming mode
+                pass
+            elif returnCode:
                 print("Failed writing finger joint %s (error: %d)" % (
                     name, returnCode))
 
 
 def open_fingers_left_hand(simx_opmode=vrep.simx_opmode_oneshot):
-    _set_hand_fingers(LHandJointNames, _LHandJointHandles, 1.0, simx_opmode)
-
-
-def close_fingers_left_hand(simx_opmode=vrep.simx_opmode_oneshot):
     _set_hand_fingers(LHandJointNames, _LHandJointHandles, 0.0, simx_opmode)
 
 
+def close_fingers_left_hand(simx_opmode=vrep.simx_opmode_oneshot):
+    _set_hand_fingers(LHandJointNames, _LHandJointHandles, 1.0, simx_opmode)
+
+
 def open_fingers_right_hand(simx_opmode=vrep.simx_opmode_oneshot):
-    _set_hand_fingers(RHandJointNames, _RHandJointHandles, 1.0, simx_opmode)
+    _set_hand_fingers(RHandJointNames, _RHandJointHandles, 0.0, simx_opmode)
 
 
 def close_fingers_right_hand(simx_opmode=vrep.simx_opmode_oneshot):
-    _set_hand_fingers(RHandJointNames, _RHandJointHandles, 0.0, simx_opmode)
+    _set_hand_fingers(RHandJointNames, _RHandJointHandles, 1.0, simx_opmode)
