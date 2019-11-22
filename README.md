@@ -125,6 +125,17 @@ sensor icon to open the `Scene Object Properties` dialog and uncheck the
 
 ![Vision sensor's icon](images/vsensors_props.png)
 
+#### The 5th example: Hold and release a ball
+
+load V-REP scene `scenes\NAO-3-BALL.ttt`
+run python code `python holdrelease_ball.py`
+
+The robot hold tightly a ball by the right-hand then moves right hand
+(by change joints: RElbowYaw and RWristYaw) without losing the ball.
+The ball is released by open the hand.
+
+![Holding and release a ball by right hand](images/hold_ball.gif)
+
 #### Additional python packages
 
 * numpy
